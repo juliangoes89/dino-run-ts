@@ -10,6 +10,7 @@ export class CloudGroup extends Phaser.GameObjects.Group {
     }
     init(){
         this.createClouds();
+        this.setAlpha(0);
     }
     update(){
         
@@ -37,4 +38,10 @@ export class CloudGroup extends Phaser.GameObjects.Group {
             this.scene.add.image(this.scene.gameWidth/1.3, 100, "cloud")
         ]);
     };
+    hideClouds(){
+        this.setAlpha(0);
+    }
+    showClouds(){
+        this.setAlpha(1);
+    }
 }

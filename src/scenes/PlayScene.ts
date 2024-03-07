@@ -1,4 +1,5 @@
 import { CloudGroup } from "../entities/Environment/CloudGroup";
+import { GroundTile } from "../entities/Environment/GroundTile";
 import { ObstacleGroup } from "../entities/Obstacles/ObstacleGroup";
 import { Player } from "../entities/Player";
 import { SpriteWithDynamicBody } from "../types";
@@ -7,16 +8,19 @@ import { GameScene } from "./GameScene";
 export class PlayScene extends GameScene {
 
     player: Player;
-    ground: Phaser.GameObjects.TileSprite;
     obstacles: ObstacleGroup;
+    
+    ground: GroundTile;
     clouds: CloudGroup;
 
     startTrigger: SpriteWithDynamicBody;
     
     highScoreText: Phaser.GameObjects.Text;
     scoreText: Phaser.GameObjects.Text;
+    
     gameOverContainer: Phaser.GameObjects.Container;
     gameOverText:  Phaser.GameObjects.Image;
+    
     restartText:  Phaser.GameObjects.Image;
 
     score = 0;
@@ -83,8 +87,7 @@ export class PlayScene extends GameScene {
        }
 
        this.scoreText.setText(score.join(""));
-       
-       this.ground.tilePositionX += (this.gameSpeed * this.gameSpeedModifier);
+
     }
     //#endregion
     //#region  Create Functions
@@ -93,17 +96,8 @@ export class PlayScene extends GameScene {
     }
 
     createEnvironment() {
-        this.ground = this.add.tileSprite(
-            0,
-            this.gameHeight,
-            88,
-            26,
-            "ground"
-        )
-        .setOrigin(0,1);
-
+        this.ground = new GroundTile(this);
         this.clouds = new CloudGroup(this);
-        this.clouds.setAlpha(0);
     }
 
     createObstacles(){
@@ -164,12 +158,12 @@ export class PlayScene extends GameScene {
                     callback: ()=>{
                         this.player.playRunAnimation();
                         this.player.setVelocityX(80);
-                        this.ground.width += (17*2);
+                        this.ground.rollOutGround();
                         if(this.ground.width >= this.gameWidth){
                             rollOutEvent.remove();
                             this.player.setVelocityX(0);
                             this.ground.width = this.gameWidth;
-                            this.clouds.setAlpha(1);
+                            this.clouds.showClouds();
                             this.scoreText.setAlpha(1);
                             this.isGameRunning = true;
                         }
