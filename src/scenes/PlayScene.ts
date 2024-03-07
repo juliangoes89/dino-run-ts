@@ -1,14 +1,15 @@
-import { PRELOAD_CONFIG } from "..";
+import { CloudGroup } from "../entities/Environment/CloudGroup";
+import { ObstacleGroup } from "../entities/Obstacles/ObstacleGroup";
 import { Player } from "../entities/Player";
 import { SpriteWithDynamicBody } from "../types";
 import { GameScene } from "./GameScene";
 
-class PlayScene extends GameScene {
+export class PlayScene extends GameScene {
 
     player: Player;
     ground: Phaser.GameObjects.TileSprite;
-    obstacles: Phaser.Physics.Arcade.Group;
-    clouds: Phaser.GameObjects.Group;
+    obstacles: ObstacleGroup;
+    clouds: CloudGroup;
 
     startTrigger: SpriteWithDynamicBody;
     
@@ -22,7 +23,7 @@ class PlayScene extends GameScene {
     scoreInterval = 100;
     scoreDeltaTime = 0;
 
-    spawnInterval = 1500;
+    spawnInterval = 1250;
     spawnTime = 0;
     gameSpeed = 10;
     gameSpeedModifier = 1;
@@ -39,7 +40,6 @@ class PlayScene extends GameScene {
         this.createPlayer();
         this.createObstacles();
         this.createGameOverContainer();
-        this.createAnimations();
         this.createScore();
 
         this.progressSound = this.sound.add("progress",{volume:0.3}) as Phaser.Sound.HTML5AudioSound;
@@ -76,15 +76,6 @@ class PlayScene extends GameScene {
             }
         }
 
-
-        if(this.spawnTime >= this.spawnInterval){
-            this.spawnTime = 0;
-            this.spawnObstacle();
-        }
-
-       Phaser.Actions.IncX(this.obstacles.getChildren(), -this.gameSpeed* this.gameSpeedModifier);
-       Phaser.Actions.IncX(this.clouds.getChildren(), -0.5);
-
        const score = Array.from(String(this.score), Number);
 
        for(let i = 0; i < 5 - String(this.score).length; i++){
@@ -92,21 +83,8 @@ class PlayScene extends GameScene {
        }
 
        this.scoreText.setText(score.join(""));
-
-
-       this.obstacles.getChildren().forEach((obstacle: SpriteWithDynamicBody) => {
-        if(obstacle.getBounds().right < 0){
-                this.obstacles.remove(obstacle);
-            }
-        });
-
-        this.clouds.getChildren().forEach((cloud: SpriteWithDynamicBody) => {
-            if(cloud.getBounds().right < 0){
-                    cloud.x = this.gameWidth + 30;
-                }
-            });
-
-        this.ground.tilePositionX += (this.gameSpeed * this.gameSpeedModifier);
+       
+       this.ground.tilePositionX += (this.gameSpeed * this.gameSpeedModifier);
     }
     //#endregion
     //#region  Create Functions
@@ -124,17 +102,12 @@ class PlayScene extends GameScene {
         )
         .setOrigin(0,1);
 
-        this.clouds = this.add.group();
-        this.clouds = this.clouds.addMultiple([
-            this.add.image(this.gameWidth/2, 170, "cloud"),
-            this.add.image(this.gameWidth - 80, 80, "cloud"),
-            this.add.image(this.gameWidth/1.3, 100, "cloud")
-        ]);
+        this.clouds = new CloudGroup(this);
         this.clouds.setAlpha(0);
     }
 
     createObstacles(){
-        this.obstacles = this.physics.add.group();
+        this.obstacles = new ObstacleGroup(this.physics.world, this);
     }
 
     createGameOverContainer(){
@@ -146,14 +119,6 @@ class PlayScene extends GameScene {
                                     .setAlpha(0);
     }
 
-    createAnimations(){
-        this.anims.create({
-            key:"enemy-bird-fly",
-            frames: this.anims.generateFrameNumbers("enemy-bird"),
-            frameRate:6,
-            repeat: -1,
-        });
-    }
     createScore(){
         this.scoreText = this.add.text(this.gameWidth, 0, "00000", {
             fontSize: 30,
@@ -222,6 +187,7 @@ class PlayScene extends GameScene {
             this.anims.pauseAll();
             
             this.player.die();
+            this.obstacles.stopAllObstacles();
             this.gameOverContainer.setAlpha(1);
 
             const newHighScore = this.highScoreText.text.substring(this.highScoreText.text.length - 5);
@@ -241,8 +207,9 @@ class PlayScene extends GameScene {
         this.restartText.on("pointerdown", ()=>{
             this.physics.resume();
             this.player.setVelocityY(0);
-
-            this.obstacles.clear(true, true);
+            
+            this.obstacles.clearAllObstacles();
+            
             this.gameOverContainer.setAlpha(0);
             this.anims.resumeAll();
 
@@ -250,29 +217,6 @@ class PlayScene extends GameScene {
         });
     }
     //#endregion
-
-    spawnObstacle() {
-        const obstacleCount = PRELOAD_CONFIG.cactusesCount + PRELOAD_CONFIG.birdsCount
-        const obstacleNum = Math.floor(Math.random() * obstacleCount) + 1;
-        const distance = Phaser.Math.Between(150, 300);
-        let obstacle:any;
-
-        if(obstacleNum > PRELOAD_CONFIG.cactusesCount){
-            const enemyPossibleHeights = [20,70];
-            const enemyHeight = enemyPossibleHeights[Math.floor(Math.random() * enemyPossibleHeights.length)];
-            obstacle = this.obstacles
-            .create( this.gameWidth + distance,this.gameHeight - enemyHeight,`enemy-bird`);
-            obstacle.play("enemy-bird-fly", true);
-        }else{
-            obstacle = this.obstacles
-            .create(this.gameWidth + distance,this.gameHeight,`obstacle-${obstacleNum}`);
-        }
-        
-        obstacle
-        .setOrigin(0,1)
-        .setImmovable(true);
-
-    }
 
 }
 export default PlayScene;
