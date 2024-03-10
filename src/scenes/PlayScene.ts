@@ -11,24 +11,29 @@ import { GameScene } from "./GameScene";
 
 export class PlayScene extends GameScene {
 
+    // Game Objects 
     player: Player;
     obstacles: ObstacleGroup;
     
+    // Environment
     ground: GroundTile;
     clouds: CloudGroup;
 
     startTrigger: SpriteWithDynamicBody;
     
+    // UI
     highScoreText: HighScore;
     scoreText: Score;
-    
     gameOverContainer: GameOverContainer;
 
+    // Game Variables
     gameSpeed = 10;
     gameSpeedModifier = 1;
 
+    // Sounds
     progressSound: Phaser.Sound.HTML5AudioSound;
 
+    // Game State Management
     emitter: EventDispatcher;
 
 
