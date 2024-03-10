@@ -6,6 +6,8 @@ import { ObstacleCacti } from "./ObstacleCacti";
 
 export class ObstacleGroup extends Phaser.Physics.Arcade.Group {
     scene: PlayScene;
+    spawnTime = 0;
+    spawnInterval = 1250;
 
     constructor(world:Phaser.Physics.Arcade.World , scene: PlayScene, children?: Phaser.GameObjects.GameObject[], config?: Phaser.Types.Physics.Arcade.PhysicsGroupConfig){
         super(world, scene, children, config);
@@ -16,14 +18,18 @@ export class ObstacleGroup extends Phaser.Physics.Arcade.Group {
         if(!this.scene.isGameRunning){
             return;
         }
+        
+        this.spawnTime += delta;
 
-        if(this.scene.spawnTime >= this.scene.spawnInterval){
-            this.scene.spawnTime = 0;
+        if(this.spawnTime >= this.spawnInterval){
+            this.spawnTime = 0;
             this.spawnObstacle();
         }
+        
         this.moveObstacles(this.scene.gameSpeed, this.scene.gameSpeedModifier);
         this.cleanOutOfBoundsObstacles();
     }
+
     spawnObstacle(){
         const obstacleCount = PRELOAD_CONFIG.cactusesCount + PRELOAD_CONFIG.birdsCount
         const obstacleNum = Math.floor(Math.random() * obstacleCount) + 1;
@@ -55,6 +61,7 @@ export class ObstacleGroup extends Phaser.Physics.Arcade.Group {
                 obstacle.stopFlyingAnimation();
             }
         });
+        this.spawnTime = 0;
     }
 
     cleanOutOfBoundsObstacles(){

@@ -2,6 +2,8 @@ import { CloudGroup } from "../entities/Environment/CloudGroup";
 import { GroundTile } from "../entities/Environment/GroundTile";
 import { ObstacleGroup } from "../entities/Obstacles/ObstacleGroup";
 import { Player } from "../entities/Player";
+import { HighScore } from "../entities/UI/HighScore";
+import { Score } from "../entities/UI/Score";
 import { SpriteWithDynamicBody } from "../types";
 import { GameScene } from "./GameScene";
 
@@ -15,17 +17,13 @@ export class PlayScene extends GameScene {
 
     startTrigger: SpriteWithDynamicBody;
     
-    highScoreText: Phaser.GameObjects.Text;
-    scoreText: Phaser.GameObjects.Text;
+    highScoreText: HighScore;
+    scoreText: Score;
     
     gameOverContainer: Phaser.GameObjects.Container;
     gameOverText:  Phaser.GameObjects.Image;
     
     restartText:  Phaser.GameObjects.Image;
-
-    score = 0;
-    scoreInterval = 100;
-    scoreDeltaTime = 0;
 
     spawnInterval = 1250;
     spawnTime = 0;
@@ -59,35 +57,6 @@ export class PlayScene extends GameScene {
         if(!this.isGameRunning){
             return;
         }
-
-        this.spawnTime += delta;
-        this.scoreDeltaTime += delta;
-
-        if(this.scoreDeltaTime >= this.scoreInterval){
-            this.score++;
-            this.scoreDeltaTime = 0;
-
-            if(this.score % 100 === 0){
-                this.gameSpeedModifier += 0.2;
-                this.progressSound.play();
-                this.tweens.add({
-                    targets:this.scoreText,
-                    duration: 100,
-                    repeat: 3,
-                    alpha: 0,
-                    yoyo: true,
-                });
-            }
-        }
-
-       const score = Array.from(String(this.score), Number);
-
-       for(let i = 0; i < 5 - String(this.score).length; i++){
-           score.unshift(0);
-       }
-
-       this.scoreText.setText(score.join(""));
-
     }
     //#endregion
     //#region  Create Functions
@@ -114,22 +83,8 @@ export class PlayScene extends GameScene {
     }
 
     createScore(){
-        this.scoreText = this.add.text(this.gameWidth, 0, "00000", {
-            fontSize: 30,
-            fontFamily: "Arial",
-            color: "#535353",
-            resolution: 5,
-        })
-        .setOrigin(1,0)
-        .setAlpha(0);
-        this.highScoreText = this.add.text(this.scoreText.getBounds().left - 20, 0, "00000", {
-            fontSize: 30,
-            fontFamily: "Arial",
-            color: "#535353",
-            resolution: 5,
-        })
-        .setOrigin(1,0)
-        .setAlpha(0);
+        this.scoreText = new Score(this);
+        this.highScoreText = new HighScore(this, this.scoreText.getBounds().left - 20);
     }
     //#endregion
 
@@ -164,7 +119,7 @@ export class PlayScene extends GameScene {
                             this.player.setVelocityX(0);
                             this.ground.width = this.gameWidth;
                             this.clouds.showClouds();
-                            this.scoreText.setAlpha(1);
+                            this.scoreText.show();
                             this.isGameRunning = true;
                         }
                     },
@@ -182,17 +137,12 @@ export class PlayScene extends GameScene {
             
             this.player.die();
             this.obstacles.stopAllObstacles();
+            
             this.gameOverContainer.setAlpha(1);
 
-            const newHighScore = this.highScoreText.text.substring(this.highScoreText.text.length - 5);
-            const newScore = Number(this.scoreText.text) > Number(newHighScore) ? this.scoreText.text : newHighScore;
-            
-            this.highScoreText.setText("HI "+newScore);
-            this.highScoreText.setAlpha(1);
+            this.highScoreText.updateHighScore(this.scoreText.text);
+            this.scoreText.reset();
 
-            this.spawnTime = 0;
-            this.score = 0;
-            this.scoreDeltaTime = 0;
             this.gameSpeedModifier = 1;
         });
     }
@@ -201,7 +151,7 @@ export class PlayScene extends GameScene {
         this.restartText.on("pointerdown", ()=>{
             this.physics.resume();
             this.player.setVelocityY(0);
-            
+
             this.obstacles.clearAllObstacles();
             
             this.gameOverContainer.setAlpha(0);
