@@ -25,8 +25,6 @@ export class PlayScene extends GameScene {
     
     restartText:  Phaser.GameObjects.Image;
 
-    spawnInterval = 1250;
-    spawnTime = 0;
     gameSpeed = 10;
     gameSpeedModifier = 1;
 
