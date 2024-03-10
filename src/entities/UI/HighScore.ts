@@ -17,7 +17,6 @@ export class HighScore extends Phaser.GameObjects.Text{
         )
         scene.add.existing(this);
         this.init();
-        //this.scene.events.on(Phaser.Scenes.Events.UPDATE, this.update, this)
     }
 
     getHighScoreValue():string{

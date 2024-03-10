@@ -2,9 +2,13 @@ import { CloudGroup } from "../entities/Environment/CloudGroup";
 import { GroundTile } from "../entities/Environment/GroundTile";
 import { ObstacleGroup } from "../entities/Obstacles/ObstacleGroup";
 import { Player } from "../entities/Player";
+import { GameOver } from "../entities/UI/GameOver/GameOver";
+import { GameOverContainer } from "../entities/UI/GameOver/GameOverContainer";
+import { Restart } from "../entities/UI/GameOver/Restart";
 import { HighScore } from "../entities/UI/HighScore";
 import { Score } from "../entities/UI/Score";
 import { SpriteWithDynamicBody } from "../types";
+import { EventDispatcher } from "../utils/EventDispatcher";
 import { GameScene } from "./GameScene";
 
 export class PlayScene extends GameScene {
@@ -20,15 +24,14 @@ export class PlayScene extends GameScene {
     highScoreText: HighScore;
     scoreText: Score;
     
-    gameOverContainer: Phaser.GameObjects.Container;
-    gameOverText:  Phaser.GameObjects.Image;
-    
-    restartText:  Phaser.GameObjects.Image;
+    gameOverContainer: GameOverContainer;
 
     gameSpeed = 10;
     gameSpeedModifier = 1;
 
     progressSound: Phaser.Sound.HTML5AudioSound;
+
+    emitter: EventDispatcher;
 
 
     constructor() {
@@ -36,18 +39,18 @@ export class PlayScene extends GameScene {
     }
 
     create() {
+        this.createEventEmitter();
         this.createEnvironment();
         this.createPlayer();
         this.createObstacles();
         this.createGameOverContainer();
         this.createScore();
+        this.createSounds();
 
-        this.progressSound = this.sound.add("progress",{volume:0.3}) as Phaser.Sound.HTML5AudioSound;
+        this.setEventListeners();
 
         this.handleGameStart();
         this.handleObstacleCollisions();
-        this.handleGameRestart();
-
 
     }
     //#region Update Function
@@ -58,6 +61,10 @@ export class PlayScene extends GameScene {
     }
     //#endregion
     //#region  Create Functions
+    createEventEmitter(){
+        this.emitter=EventDispatcher.getInstance();
+    }
+
     private createPlayer() {
         this.player = new Player(this, 0, this.gameHeight, "dino-run");
     }
@@ -72,20 +79,23 @@ export class PlayScene extends GameScene {
     }
 
     createGameOverContainer(){
-        this.gameOverText = this.add.image(0,0,"game-over");
-        this.restartText = this.add.image(0, 80,"restart").setInteractive();
-
-        this.gameOverContainer = this.add
-                                    .container(this.gameWidth/2, (this.gameHeight/2) - 50, [this.gameOverText, this.restartText])
-                                    .setAlpha(0);
+        this.gameOverContainer = new GameOverContainer(this);
     }
 
     createScore(){
         this.scoreText = new Score(this);
         this.highScoreText = new HighScore(this, this.scoreText.getBounds().left - 20);
     }
-    //#endregion
 
+    createSounds(){
+        this.progressSound = this.sound.add("progress",{volume:0.3}) as Phaser.Sound.HTML5AudioSound;
+    }
+    //#endregion
+    //#region Listeners
+    setEventListeners(){
+        this.emitter.on("RESET_PRESSED", this.handleGameRestartEvent, this);
+    }
+    //#endregion
     //#region Game Handlers
     handleGameStart(){
         this.startTrigger = this.physics.add.sprite(
@@ -136,7 +146,7 @@ export class PlayScene extends GameScene {
             this.player.die();
             this.obstacles.stopAllObstacles();
             
-            this.gameOverContainer.setAlpha(1);
+            this.gameOverContainer.show();
 
             this.highScoreText.updateHighScore(this.scoreText.text);
             this.scoreText.reset();
@@ -145,18 +155,16 @@ export class PlayScene extends GameScene {
         });
     }
 
-    handleGameRestart(){
-        this.restartText.on("pointerdown", ()=>{
-            this.physics.resume();
-            this.player.setVelocityY(0);
+    handleGameRestartEvent(){
+        this.physics.resume();
+        this.player.setVelocityY(0);
 
-            this.obstacles.clearAllObstacles();
-            
-            this.gameOverContainer.setAlpha(0);
-            this.anims.resumeAll();
+        this.obstacles.clearAllObstacles();
+        
+        this.gameOverContainer.setAlpha(0);
+        this.anims.resumeAll();
 
-            this.isGameRunning = true;
-        });
+        this.isGameRunning = true;
     }
     //#endregion
 
