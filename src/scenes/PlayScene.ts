@@ -2,6 +2,7 @@ import { CloudGroup } from "../entities/Environment/CloudGroup";
 import { GroundTile } from "../entities/Environment/GroundTile";
 import { ObstacleGroup } from "../entities/Obstacles/ObstacleGroup";
 import { Player } from "../entities/Player";
+import { StartTrigger } from "../entities/StartTrigger";
 import { GameOverContainer } from "../entities/UI/GameOver/GameOverContainer";
 import { HighScore } from "../entities/UI/HighScore";
 import { Score } from "../entities/UI/Score";
@@ -19,7 +20,7 @@ export class PlayScene extends GameScene {
     ground: GroundTile;
     clouds: CloudGroup;
 
-    startTrigger: SpriteWithDynamicBody;
+    startTrigger: StartTrigger;
     
     // UI
     highScoreText: HighScore;
@@ -35,6 +36,7 @@ export class PlayScene extends GameScene {
 
     // Game State Management
     emitter: EventDispatcher;
+    rollOutEvent: Phaser.Time.TimerEvent;
 
 
     constructor() {
@@ -101,42 +103,33 @@ export class PlayScene extends GameScene {
     //#endregion
     //#region Game Handlers
     handleGameStart(){
-        this.startTrigger = this.physics.add.sprite(
-            0,
-            10,
-            null
-        )
-        .setAlpha(0)
-        .setOrigin(0,1);
-
+        this.startTrigger = new StartTrigger(this);
         this.physics.add.overlap(
             this.startTrigger,
             this.player,
             ()=>{
-                if(this.startTrigger.y === 10){
-                    this.startTrigger.body.reset(0, this.gameHeight);
-                    return;
-                }
-                this.startTrigger.body.reset(9999, 9999);
-                const rollOutEvent = this.time.addEvent({
+                this.startTrigger.start();
+                this.rollOutEvent = this.time.addEvent({
                     delay: 1000/60,
                     loop: true,
-                    callback: ()=>{
-                        this.player.playRunAnimation();
-                        this.player.setVelocityX(80);
-                        this.ground.rollOutGround();
-                        if(this.ground.width >= this.gameWidth){
-                            rollOutEvent.remove();
-                            this.player.setVelocityX(0);
-                            this.ground.width = this.gameWidth;
-                            this.clouds.showClouds();
-                            this.scoreText.show();
-                            this.isGameRunning = true;
-                        }
-                    },
+                    callback: this.rollOutEventCallback.bind(this),
                 });
             }
         );
+    }
+
+    rollOutEventCallback(){
+        this.player.playRunAnimation();
+        this.player.setVelocityX(80);
+        this.ground.rollOutGround();
+        if(this.ground.width >= this.gameWidth){
+            this.rollOutEvent.remove();
+            this.player.setVelocityX(0);
+            this.ground.width = this.gameWidth;
+            this.clouds.showClouds();
+            this.scoreText.show();
+            this.isGameRunning = true;
+        }
     }
 
     handleObstacleCollisions(){
