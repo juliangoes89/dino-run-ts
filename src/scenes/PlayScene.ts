@@ -108,12 +108,14 @@ export class PlayScene extends GameScene {
             this.startTrigger,
             this.player,
             ()=>{
-                this.startTrigger.start();
-                this.rollOutEvent = this.time.addEvent({
-                    delay: 1000/60,
-                    loop: true,
-                    callback: this.rollOutEventCallback.bind(this),
-                });
+                const startGame = this.startTrigger.start();
+                if(startGame){
+                    this.rollOutEvent = this.time.addEvent({
+                        delay: 1000/60,
+                        loop: true,
+                        callback: this.rollOutEventCallback.bind(this),
+                    });
+                }
             }
         );
     }

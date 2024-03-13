@@ -20,8 +20,10 @@ export class StartTrigger extends Phaser.Physics.Arcade.Sprite {
 
     start(){
         if(this.y === 10){
-            this.body.reset(0, this.scene.gameHeight+ 100);
-            return;
+            this.body.reset(0, this.scene.gameHeight);
+            return false;
         }
+        this.body.reset(9999, 9999);
+        return true;
     }
 }
